@@ -28,12 +28,6 @@
           scrollbar-width: none;
         }
     </style>
-    <script>
-      // Shim de segurança para evitar erro "process is not defined"
-      if (typeof window.process === 'undefined') {
-        window.process = { env: { API_KEY: "" } };
-      }
-    </script>
 <script type="importmap">
 {
   "imports": {
