@@ -1,5 +1,5 @@
 
-import { Category, Product, Store } from './types';
+import { Category, Product, Store } from './types.ts';
 
 export const CATEGORIES: Category[] = [
   { id: '1', name: 'Eletrônicos', icon: 'fa-laptop', slug: 'eletronicos' },
@@ -30,7 +30,6 @@ export const MOCK_PRODUCTS: Product[] = [
     store: STORES[0],
     category: CATEGORIES[1],
     updatedAt: '10 min atrás',
-    // Fix: Added missing createdAt property to comply with Product type
     createdAt: new Date().toISOString(),
     isFlashDeal: true
   },
@@ -46,7 +45,6 @@ export const MOCK_PRODUCTS: Product[] = [
     store: STORES[3],
     category: CATEGORIES[0],
     updatedAt: '25 min atrás',
-    // Fix: Added missing createdAt property to comply with Product type
     createdAt: new Date().toISOString()
   },
   {
@@ -62,7 +60,6 @@ export const MOCK_PRODUCTS: Product[] = [
     category: CATEGORIES[2],
     coupon: 'COZINHA10',
     updatedAt: '1 hora atrás',
-    // Fix: Added missing createdAt property to comply with Product type
     createdAt: new Date().toISOString()
   },
   {
@@ -77,7 +74,6 @@ export const MOCK_PRODUCTS: Product[] = [
     store: STORES[2],
     category: CATEGORIES[3],
     updatedAt: '2 horas atrás',
-    // Fix: Added missing createdAt property to comply with Product type
     createdAt: new Date().toISOString()
   },
   {
@@ -92,7 +88,6 @@ export const MOCK_PRODUCTS: Product[] = [
     store: STORES[0],
     category: CATEGORIES[5],
     updatedAt: '5 min atrás',
-    // Fix: Added missing createdAt property to comply with Product type
     createdAt: new Date().toISOString(),
     isFlashDeal: true
   },
@@ -108,7 +103,6 @@ export const MOCK_PRODUCTS: Product[] = [
     store: STORES[0],
     category: CATEGORIES[0],
     updatedAt: '30 min atrás',
-    // Fix: Added missing createdAt property to comply with Product type
     createdAt: new Date().toISOString()
   },
 ];
