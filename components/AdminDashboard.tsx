@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Product, Store, Category } from '../types.ts';
 import { STORES, CATEGORIES } from '../constants.tsx';
 import { extractProductInfoFromUrl, parseTelegramContent } from '../services/geminiService.ts';
@@ -12,12 +12,20 @@ interface AdminDashboardProps {
   onLogout: () => void;
 }
 
+const AUTO_SCAN_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct, onBulkAdd, onDeleteProduct, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'bot' | 'manual'>('bot');
   const [isAdding, setIsAdding] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   
+  // Automação
+  const [isAutoScanActive, setIsAutoScanActive] = useState(() => localStorage.getItem('auto_scan_active') === 'true');
+  const [nextScanSeconds, setNextScanSeconds] = useState(AUTO_SCAN_INTERVAL_MS / 1000);
+  const timerRef = useRef<number | null>(null);
+  const countdownRef = useRef<number | null>(null);
+
   const [botToken, setBotToken] = useState(() => localStorage.getItem('tg_bot_token') || '');
   const [channelId, setChannelId] = useState(() => localStorage.getItem('tg_channel_id') || '');
   const [botLogs, setBotLogs] = useState<string[]>([]);
@@ -28,24 +36,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
     affiliateUrl: '',
   });
 
+  const addLog = useCallback((msg: string) => {
+    setBotLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 15));
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('tg_bot_token', botToken);
     localStorage.setItem('tg_channel_id', channelId);
-  }, [botToken, channelId]);
+    localStorage.setItem('auto_scan_active', String(isAutoScanActive));
+  }, [botToken, channelId, isAutoScanActive]);
 
-  const addLog = (msg: string) => {
-    setBotLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 10));
-  };
-
-  const fetchFromTelegram = async () => {
+  const fetchFromTelegram = useCallback(async (isAuto = false) => {
     if (!botToken || !channelId) {
-      alert('Configure o Token e o ID do Canal primeiro!');
+      if (!isAuto) alert('Configure o Token e o ID do Canal primeiro!');
       return;
     }
 
     setIsSyncing(true);
-    setBotLogs([]);
-    addLog('🤖 Conectando com Telegram...');
+    addLog(isAuto ? '🤖 [AUTO] Iniciando busca periódica...' : '🤖 Conectando com Telegram...');
 
     try {
       const response = await fetch(`https://api.telegram.org/bot${botToken}/getUpdates?limit=50&allowed_updates=["channel_post"]`);
@@ -61,7 +69,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
         .join('\n---\n');
 
       if (!messages) {
-        addLog('⚠️ Sem novas ofertas detectadas no histórico recente do bot.');
+        addLog(isAuto ? '💤 [AUTO] Nada de novo no canal.' : '⚠️ Sem novas ofertas detectadas no histórico recente.');
         setIsSyncing(false);
         return;
       }
@@ -86,16 +94,46 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
         }));
 
         onBulkAdd(productsToAdd);
-        addLog(`✅ ${productsToAdd.length} novas ofertas importadas!`);
+        addLog(`✅ ${isAuto ? '[AUTO] ' : ''}${productsToAdd.length} novas ofertas importadas com sucesso!`);
       } else {
         addLog('❌ Nenhuma oferta válida encontrada nas mensagens.');
       }
     } catch (err: any) {
-      addLog(`Erro: ${err.message}`);
+      addLog(`❌ Erro: ${err.message}`);
     } finally {
       setIsSyncing(false);
+      if (isAutoScanActive) {
+        setNextScanSeconds(AUTO_SCAN_INTERVAL_MS / 1000);
+      }
     }
-  };
+  }, [botToken, channelId, isAutoScanActive, onBulkAdd, addLog]);
+
+  // Gerenciamento da Varredura Automática
+  useEffect(() => {
+    if (isAutoScanActive) {
+      addLog('🚀 Varredura Automática ATIVADA (Ciclo de 5min)');
+      
+      // Countdown Timer
+      countdownRef.current = window.setInterval(() => {
+        setNextScanSeconds(prev => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+
+      // Main Interval
+      timerRef.current = window.setInterval(() => {
+        fetchFromTelegram(true);
+      }, AUTO_SCAN_INTERVAL_MS);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      addLog('🛑 Varredura Automática DESATIVADA');
+      setNextScanSeconds(AUTO_SCAN_INTERVAL_MS / 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, [isAutoScanActive, fetchFromTelegram, addLog]);
 
   const handleMagicFill = async () => {
     if (!newProduct.affiliateUrl) return;
@@ -140,6 +178,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
     setIsAdding(false);
   };
 
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 bg-white p-6 rounded-[32px] shadow-sm border border-gray-100">
@@ -149,7 +193,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
           </div>
           <div>
             <h2 className="text-2xl font-black text-gray-800 tracking-tighter uppercase italic">Painel do Administrador</h2>
-            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[3px]">Gerenciamento Automático</p>
+            <p className="text-gray-400 text-[10px] font-black uppercase tracking-[3px]">Gerenciamento Inteligente</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -179,7 +223,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
       {activeTab === 'bot' ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-1 bg-white p-8 rounded-[40px] shadow-xl border border-blue-50">
-            <h3 className="text-lg font-black text-gray-800 mb-6 uppercase italic tracking-tighter">Configurar API</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-black text-gray-800 uppercase italic tracking-tighter">Configurar API</h3>
+              {isAutoScanActive && (
+                <span className="text-[9px] font-black text-blue-500 animate-pulse uppercase">Auto: {formatCountdown(nextScanSeconds)}</span>
+              )}
+            </div>
+            
             <div className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 ml-1">Bot Token (@BotFather)</label>
@@ -200,13 +250,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
                   onChange={(e) => setChannelId(e.target.value)}
                 />
               </div>
+
+              {/* Toggle Varredura Automática */}
+              <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-[#0047BA] uppercase">Varredura Automática</p>
+                  <p className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Busca ofertas a cada 5 min</p>
+                </div>
+                <button 
+                  onClick={() => setIsAutoScanActive(!isAutoScanActive)}
+                  className={`relative w-12 h-6 rounded-full transition-colors duration-300 ${isAutoScanActive ? 'bg-[#0047BA]' : 'bg-gray-300'}`}
+                >
+                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 ${isAutoScanActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                </button>
+              </div>
+
               <button 
-                onClick={fetchFromTelegram}
+                onClick={() => fetchFromTelegram(false)}
                 disabled={isSyncing}
                 className="w-full bg-[#0047BA] text-white font-black py-5 rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 italic disabled:opacity-50"
               >
                 {isSyncing ? <i className="fa-solid fa-spinner animate-spin"></i> : <i className="fa-solid fa-bolt-lightning text-[#FFD700]"></i>}
-                INICIAR VARREDURA
+                VARREDURA MANUAL
               </button>
             </div>
           </div>
@@ -214,18 +279,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onAddProduct,
           <div className="lg:col-span-2 bg-gray-900 rounded-[40px] p-8 shadow-2xl relative overflow-hidden">
             <div className="flex items-center justify-between mb-6">
                <h3 className="text-white font-black uppercase italic text-sm tracking-widest flex items-center gap-2">
-                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                 Status do Robô
+                 <div className={`w-2 h-2 rounded-full ${isAutoScanActive ? 'bg-blue-400 animate-pulse' : 'bg-gray-500'}`}></div>
+                 {isAutoScanActive ? 'Monitoramento 24/7 Ativo' : 'Log de Operações'}
                </h3>
-               <span className="text-gray-500 font-mono text-[10px]">v2.0 Stable</span>
+               <span className="text-gray-500 font-mono text-[10px]">v2.5 Enterprise</span>
             </div>
-            <div className="font-mono text-xs space-y-2 h-64 overflow-y-auto custom-scrollbar">
+            <div className="font-mono text-xs space-y-2 h-72 overflow-y-auto custom-scrollbar">
               {botLogs.length > 0 ? botLogs.map((log, i) => (
-                <div key={i} className={`${log.includes('✅') ? 'text-green-400' : log.includes('❌') || log.includes('Erro') ? 'text-red-400' : 'text-blue-300'} border-l-2 border-gray-800 pl-3 py-1`}>
+                <div key={i} className={`${log.includes('✅') ? 'text-green-400' : log.includes('❌') || log.includes('Erro') ? 'text-red-400' : log.includes('[AUTO]') ? 'text-blue-300' : 'text-gray-400'} border-l-2 border-gray-800 pl-3 py-1`}>
                   {log}
                 </div>
               )) : (
-                <div className="text-gray-600 italic">Aguardando comando de varredura...</div>
+                <div className="text-gray-600 italic">Aguardando comando ou ativação do monitoramento...</div>
               )}
             </div>
           </div>
