@@ -33,12 +33,12 @@ const App: React.FC = () => {
       }));
     }
 
-    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-    const now = new Date().getTime();
+    // Lógica para manter apenas ofertas do dia atual (limpeza à meia-noite)
+    const todayStr = new Date().toDateString();
     
     const validProducts = currentProducts.filter(p => {
-      const createdDate = new Date(p.createdAt).getTime();
-      return (now - createdDate) < SEVEN_DAYS_MS;
+      const createdDate = new Date(p.createdAt);
+      return createdDate.toDateString() === todayStr;
     });
 
     setProducts(validProducts);
@@ -117,33 +117,33 @@ const App: React.FC = () => {
                   </span>
                   <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight italic tracking-tighter text-white">
                     OFERTAS QUE <br/> 
-                    <span className="text-[#FFD700]">CHEGAM PARA VOCÊ!</span>
+                    <span className="text-[#FFD700]">EXPIRAM HOJE!</span>
                   </h2>
                   <p className="text-blue-50 text-lg mb-6 font-medium max-w-lg">
-                    Agregador oficial de promoções. Ofertas atualizadas minuto a minuto e removidas após 7 dias para garantir o melhor preço!
+                    Agregador oficial de promoções. Ofertas atualizadas minuto a minuto e <strong>removidas automaticamente à meia-noite</strong> para garantir que você veja apenas o que está valendo!
                   </p>
                   <div className="flex flex-wrap gap-4">
                     <button className="bg-[#FFD700] text-[#0047BA] px-8 py-4 rounded-2xl font-black shadow-lg hover:scale-105 transition-all">
-                      VER TUDO AGORA
+                      APROVEITAR AGORA
                     </button>
                     <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-2xl border border-white/20 text-white">
-                      <span className="text-sm font-bold">Limpando posts expirados...</span>
+                      <span className="text-sm font-bold">Limpando à meia-noite...</span>
                     </div>
                   </div>
                 </div>
                 <div className="absolute top-1/2 right-0 -translate-y-1/2 opacity-10 pointer-events-none text-white">
-                   <i className="fa-solid fa-box-open text-[300px] rotate-12"></i>
+                   <i className="fa-solid fa-clock text-[300px] rotate-12"></i>
                 </div>
               </div>
             </section>
 
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
-                <div className="w-2 bg-[#0047BA] h-8 rounded-full"></div>
-                OFERTAS SELECIONADAS
+              <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3 italic">
+                <div className="w-2 bg-[#FFD700] h-8 rounded-full animate-pulse"></div>
+                OFERTAS DO DIA
               </h2>
-              <span className="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                {filteredProducts.length} Achadinhos
+              <span className="bg-[#0047BA] text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+                {filteredProducts.length} Válidas até 00:00
               </span>
             </div>
 
@@ -155,8 +155,8 @@ const App: React.FC = () => {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-center bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200">
-                <i className="fa-solid fa-search text-5xl text-gray-200 mb-4"></i>
-                <h3 className="text-xl font-bold text-gray-400 uppercase italic">Nenhuma oferta encontrada</h3>
+                <i className="fa-solid fa-hourglass-end text-5xl text-gray-200 mb-4"></i>
+                <h3 className="text-xl font-bold text-gray-400 uppercase italic">Aguardando as ofertas de hoje...</h3>
                 <button onClick={() => { setSearchQuery(''); setActiveCategory('all'); }} className="mt-6 bg-[#0047BA] text-white px-8 py-3 rounded-xl font-black shadow-md">RESETAR FILTROS</button>
               </div>
             )}
@@ -187,7 +187,7 @@ const App: React.FC = () => {
             <a href="https://t.me/chegouseupedido" className="hover:text-[#229ED9] transition-colors"><i className="fa-brands fa-telegram text-2xl"></i></a>
           </div>
           <p className="text-gray-600 text-[10px] max-w-md mx-auto">
-            Este site é um agregador de ofertas de afiliados. Ao clicar nos links, podemos receber uma comissão sem custo adicional para você. Os posts são deletados automaticamente após 7 dias para garantir a relevância das promoções.
+            Este site é um agregador de ofertas de afiliados. Ao clicar nos links, podemos receber uma comissão sem custo adicional para você. Todas as ofertas são removidas automaticamente à meia-noite para garantir a máxima relevância.
           </p>
         </div>
       </footer>
