@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { AppView } from '../types';
+import { AppView } from '../types.ts';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -49,19 +49,26 @@ const Header: React.FC<HeaderProps> = ({ onSearch, currentView, onNavigate }) =>
           </form>
 
           {/* Nav */}
-          <div className="hidden lg:flex items-center gap-6 font-bold">
-            <button onClick={() => onNavigate('home')} className={`transition-colors flex flex-col items-center ${currentView === 'home' ? 'text-[#FFD700]' : 'hover:text-[#FFD700] text-white'}`}>
+          <div className="hidden lg:flex items-center gap-4 font-bold">
+            <button onClick={() => onNavigate('home')} className={`transition-colors flex flex-col items-center px-2 ${currentView === 'home' ? 'text-[#FFD700]' : 'hover:text-[#FFD700] text-white'}`}>
               <i className="fa-solid fa-house mb-1"></i>
               <span className="text-[10px] uppercase">Home</span>
             </button>
-            <button onClick={() => onNavigate(currentView === 'admin' ? 'admin' : 'login')} className={`transition-colors flex flex-col items-center ${currentView !== 'home' ? 'text-[#FFD700]' : 'hover:text-[#FFD700] text-white'}`}>
+            <button onClick={() => onNavigate(currentView === 'admin' ? 'admin' : 'login')} className={`transition-colors flex flex-col items-center px-2 ${currentView !== 'home' ? 'text-[#FFD700]' : 'hover:text-[#FFD700] text-white'}`}>
               <i className="fa-solid fa-user-lock mb-1"></i>
               <span className="text-[10px] uppercase">{currentView === 'admin' ? 'Painel' : 'Admin'}</span>
             </button>
-            <a href="https://t.me/chegouseupedido" target="_blank" rel="noreferrer" className="bg-[#229ED9] hover:bg-[#1e8dbf] px-4 py-2 rounded-2xl text-xs font-black flex items-center gap-2 shadow-lg transition-transform active:scale-95">
-              <i className="fa-brands fa-telegram text-lg"></i>
-              TELEGRAM
-            </a>
+            
+            <div className="flex items-center gap-2">
+              <a href="https://t.me/chegouseupedido" target="_blank" rel="noreferrer" className="bg-[#229ED9] hover:bg-[#1e8dbf] px-3 py-2 rounded-2xl text-[10px] font-black flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+                <i className="fa-brands fa-telegram text-base"></i>
+                TELEGRAM
+              </a>
+              <a href="https://whatsapp.com/channel/0029Vb6ykHH8fewqFQ0fv71pS" target="_blank" rel="noreferrer" className="bg-[#25D366] hover:bg-[#20ba59] px-3 py-2 rounded-2xl text-[10px] font-black flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+                <i className="fa-brands fa-whatsapp text-base"></i>
+                WHATSAPP
+              </a>
+            </div>
           </div>
         </div>
       </div>

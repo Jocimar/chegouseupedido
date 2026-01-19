@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import Header from './components/Header';
-import CategoryBar from './components/CategoryBar';
-import ProductCard from './components/ProductCard';
-import Login from './components/Login';
-import AdminDashboard from './components/AdminDashboard';
-import { MOCK_PRODUCTS } from './constants';
-import { FilterType, Product, AppView } from './types';
+import Header from './components/Header.tsx';
+import CategoryBar from './components/CategoryBar.tsx';
+import ProductCard from './components/ProductCard.tsx';
+import Login from './components/Login.tsx';
+import AdminDashboard from './components/AdminDashboard.tsx';
+import { MOCK_PRODUCTS } from './constants.tsx';
+import { FilterType, Product, AppView } from './types.ts';
 
 const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,23 +15,24 @@ const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Persistence and Expiration logic
   useEffect(() => {
     const savedProducts = localStorage.getItem('affiliate_products');
     const savedAdmin = sessionStorage.getItem('is_admin');
     
     let currentProducts: Product[] = [];
     if (savedProducts) {
-      currentProducts = JSON.parse(savedProducts);
+      try {
+        currentProducts = JSON.parse(savedProducts);
+      } catch (e) {
+        currentProducts = [];
+      }
     } else {
-      // Initialize mocks with current date
       currentProducts = MOCK_PRODUCTS.map(p => ({
         ...p,
         createdAt: p.createdAt || new Date().toISOString()
       }));
     }
 
-    // Auto-delete logic: Filter out products older than 7 days
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     const now = new Date().getTime();
     
@@ -56,7 +57,11 @@ const App: React.FC = () => {
   };
 
   const handleBulkAdd = (newProducts: Product[]) => {
-    setProducts([...newProducts, ...products]);
+    setProducts(prev => {
+      const existingIds = new Set(prev.map(p => p.id));
+      const filteredNew = newProducts.filter(p => !existingIds.has(p.id));
+      return [...filteredNew, ...prev];
+    });
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -110,24 +115,23 @@ const App: React.FC = () => {
                   <span className="bg-[#FFD700] text-[#0047BA] px-4 py-1 rounded-full text-xs font-black mb-4 inline-block uppercase tracking-wider shadow-md">
                     Sua encomenda começa aqui
                   </span>
-                  <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight italic tracking-tighter">
+                  <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight italic tracking-tighter text-white">
                     OFERTAS QUE <br/> 
                     <span className="text-[#FFD700]">CHEGAM PARA VOCÊ!</span>
                   </h2>
                   <p className="text-blue-50 text-lg mb-6 font-medium max-w-lg">
-                    Agregador oficial de promoções. Ofertas atualizadas minuto a minuto e removidas após 7 dias para garantir o menor preço!
+                    Agregador oficial de promoções. Ofertas atualizadas minuto a minuto e removidas após 7 dias para garantir o melhor preço!
                   </p>
                   <div className="flex flex-wrap gap-4">
                     <button className="bg-[#FFD700] text-[#0047BA] px-8 py-4 rounded-2xl font-black shadow-lg hover:scale-105 transition-all">
                       VER TUDO AGORA
                     </button>
-                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-2xl border border-white/20">
+                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-2xl border border-white/20 text-white">
                       <span className="text-sm font-bold">Limpando posts expirados...</span>
                     </div>
                   </div>
                 </div>
-                {/* Background Decoration */}
-                <div className="absolute top-1/2 right-0 -translate-y-1/2 opacity-10 pointer-events-none">
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 opacity-10 pointer-events-none text-white">
                    <i className="fa-solid fa-box-open text-[300px] rotate-12"></i>
                 </div>
               </div>
@@ -173,7 +177,6 @@ const App: React.FC = () => {
 
       <footer className="bg-gray-900 text-white pt-20 pb-10">
         <div className="container mx-auto px-4 text-center">
-          {/* Logo substituto por ícone de caixa */}
           <div className="text-6xl text-[#FFD700] opacity-40 mb-6 flex justify-center hover:opacity-100 transition-opacity">
             <i className="fa-solid fa-box-open"></i>
           </div>
@@ -189,7 +192,6 @@ const App: React.FC = () => {
         </div>
       </footer>
 
-      {/* Mobile Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-3 px-2 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] rounded-t-[32px]">
         <button onClick={() => setCurrentView('home')} className={`flex flex-col items-center flex-1 py-1 rounded-2xl transition-all ${currentView === 'home' ? 'text-[#0047BA] bg-blue-50' : 'text-gray-400'}`}>
           <i className="fa-solid fa-house text-xl"></i>

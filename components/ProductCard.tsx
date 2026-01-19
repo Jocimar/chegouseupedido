@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product } from '../types';
-import { getProductHighlight } from '../services/geminiService';
+import { Product } from '../types.ts';
+import { getProductHighlight } from '../services/geminiService.ts';
 
 interface ProductCardProps {
   product: Product;
@@ -37,7 +37,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Badges */}
       <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 pointer-events-none">
         <span className="bg-[#FFD700] text-[#0047BA] text-[11px] font-black px-3 py-1 rounded-lg shadow-lg transform -rotate-1 tracking-tighter">
           -{product.discountPercentage}% OFF
@@ -49,14 +48,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         )}
       </div>
 
-      {/* Store Logo Top Right */}
       <div className="absolute top-4 right-4 z-10">
         <div className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-md border border-gray-100">
            <img src={product.store.logo} alt={product.store.name} className="w-7 h-7 object-contain" title={product.store.name} />
         </div>
       </div>
 
-      {/* Image Container */}
       <div className="relative aspect-square overflow-hidden bg-gray-50 cursor-pointer p-4" onClick={handleRedirection}>
         <img 
           src={product.imageUrl} 
@@ -72,7 +69,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         )}
       </div>
 
-      {/* Content */}
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex items-center gap-1.5 text-[9px] text-gray-400 mb-2 uppercase font-black tracking-widest">
           <i className="fa-solid fa-calendar-check text-[#0047BA]"></i>
@@ -83,7 +79,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           {product.title}
         </h3>
 
-        {/* AI Highlight */}
         {aiHighlight && (
           <div className="mb-4 bg-blue-50/50 p-2.5 rounded-xl border-l-4 border-[#0047BA]">
             <p className="text-[10px] text-blue-900 italic font-bold leading-tight">
@@ -102,7 +97,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </div>
           </div>
 
-          {/* Coupon Button */}
           {product.coupon && (
             <button 
               onClick={copyCoupon}
@@ -116,7 +110,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </button>
           )}
 
-          {/* Main Action Button */}
           <button 
             onClick={handleRedirection}
             className="w-full bg-[#0047BA] hover:bg-[#00338a] text-white font-black py-4 rounded-[20px] shadow-[0_6px_0_0_#00225d] active:shadow-none active:translate-y-1 transition-all flex items-center justify-center gap-2 group/btn"
